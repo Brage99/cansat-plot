@@ -1,4 +1,5 @@
 import pandas as pd
+import simplekml
 from datetime import datetime
 import csv
 import matplotlib.pyplot as plt
@@ -58,13 +59,13 @@ M = 0.0289644 # molar mass of Earth's air
 P0 = 101033.66 # Pressure at ground level
 P = df_merged['pressure'] # pressure in Pa
 
-altitude = (R*T0/(g*M))*np.log(P0/P) # barometric altimeter equation
+df_merged['altitude'] = (R*T0/(g*M))*np.log(P0/P) # barometric altimeter equation
 
-print(f"Max altitude: {altitude.max()} meters")
+print(f"Max altitude: {df_merged['altitude'].max()} meters")
 
 # Plot the calculated altitude vs GPS altitude
 plt.xticks(np.arange(0,1597, 400)) 
-plt.plot(df_merged['time'], altitude)
+plt.plot(df_merged['time'], df_merged['altitude'])
 plt.plot(df_merged['time'], df_merged['alt'], 'r')
 plt.xlabel('Time')
 plt.ylabel('Altitude')
@@ -99,3 +100,25 @@ plt.xlabel('Index')
 plt.ylabel('Packets lost')
 plt.title('Signal lost total')
 plt.show()
+
+start_point = df_merged.iloc[0]  # Start is the first row
+max_altitude_index = df_merged['altitude'].idxmax() 
+max_altitude_point = df_merged.loc[max_altitude_index]
+end_point = df_merged.iloc[-1]  # End is the last row
+
+selected_points = pd.DataFrame([start_point, max_altitude_point, end_point])
+
+kml = simplekml.Kml()
+# Create a LineString with all points to show the trajectory
+linestring = kml.newlinestring(name="Full Trajectory")
+linestring.coords = [(lon, lat, alt) for lat, lon, alt in zip(df_merged['lat'], df_merged['lng'], df_merged['altitude'])]
+linestring.altitudemode = simplekml.AltitudeMode.absolute
+linestring.extrude = 1  # Extend line to the ground
+linestring.style.linestyle.color = '25525500'  # Opaque red, aabbggrr format
+
+for point, label in zip([start_point, max_altitude_point, end_point], ["Start", "Max Altitude", "End"]):
+    pnt = kml.newpoint(name=label, coords=[(point['lng'], point['lat'], point['altitude'])])
+    pnt.altitudemode = simplekml.AltitudeMode.absolute
+    #pnt.extrude = 1
+
+kml.save('test.kml')
