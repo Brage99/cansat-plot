@@ -22,6 +22,7 @@ df_merged.drop_duplicates(subset=['id'], inplace=True) # Deletes the duplicate i
 # Saves the merged dataset to a txt file
 df_merged.to_csv('merged_data.txt', index=False, sep=',')
 
+
 # NTC Material constants
 A1 = 3.354016e-3
 B1 = 2.569850e-4
